@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171518" />
+    <meta name="description" content="Empty Threats song board — from first suggestion to gig ready." />
+    <title>Song Board · Empty Threats</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="config.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <header class="site-header">
+        <a class="brand" href="./" aria-label="Empty Threats song board home">
+          <span class="brand-mark" aria-hidden="true">ET<span class="brand-mark-dot">.</span></span>
+          <span class="brand-copy"><strong>EMPTY THREATS</strong><small>THE SONG BOARD</small></span>
+        </a>
+      </header>
+
+      <main>
+        <section id="auth-view" class="auth-layout" hidden>
+          <div class="auth-copy">
+            <p class="eyebrow">THE SHARED SETLIST WORKSHOP</p>
+            <h1>Good songs start<br /><em>somewhere.</em></h1>
+            <p>Drop a song in the mix, track what we’re rehearsing, and keep the gig ready list close at hand.</p>
+            <div class="auth-stages" aria-hidden="true"><span>01 / Suggest</span><span>02 / Practice</span><span>03 / Play live</span></div>
+          </div>
+          <div class="auth-panel">
+            <div class="panel-icon" aria-hidden="true">✳</div>
+            <h2>Band members, come on in.</h2>
+            <p>Enter the shared band code to open the song board.</p>
+            <form id="join-form">
+              <label for="band-name">Your name</label>
+              <input id="band-name" name="band_name" type="text" autocomplete="name" maxlength="80" placeholder="What should we call you?" required />
+              <label for="band-code">Band access code</label>
+              <input id="band-code" name="band_code" type="password" autocomplete="off" minlength="16" placeholder="Enter the band code" required />
+              <button class="button button-primary full-width" type="submit">Open song board <span aria-hidden="true">↗</span></button>
+            </form>
+            <p id="auth-message" class="form-message" role="status" aria-live="polite"></p>
+            <p class="fine-print">Ask the band admin for the code. Access stays on this browser, so you only need to enter it once.</p>
+          </div>
+        </section>
+
+        <section id="board-view" class="board-view" hidden>
+          <div id="demo-banner" class="demo-banner" hidden><strong>Demo mode</strong> · Changes stay in this browser. Add Supabase details in <code>config.js</code> to share this board with the band.</div>
+          <div class="hero">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-line"></span> BAND HQ / SONG IDEAS</p>
+              <h1>Build the <em>setlist.</em></h1>
+              <p class="hero-subtitle">One place for every “we should play this” moment.</p>
+            </div>
+            <button id="add-song" class="button button-primary add-button" type="button"><span class="plus" aria-hidden="true">＋</span> Add a song</button>
+          </div>
+
+          <div class="toolbar">
+            <div class="board-summary"><span id="total-count" class="total-count">0</span><span>songs in the mix</span></div>
+            <div class="toolbar-actions">
+              <label class="search-wrap"><span class="sr-only">Search songs</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg><input id="search" type="search" placeholder="Search songs or artists" autocomplete="off" /></label>
+              <button id="refresh" class="icon-button refresh-button" type="button" title="Refresh songs" aria-label="Refresh songs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5"></path><path d="M5.7 9A7 7 0 0 1 18.3 7L20 11M4 13l1.7 4A7 7 0 0 0 18.3 15"></path></svg></button>
+            </div>
+          </div>
+
+          <div class="mobile-tabs" role="tablist" aria-label="Song stage">
+            <button class="mobile-tab active" type="button" role="tab" data-stage="suggestions" aria-selected="true">Suggestions <span data-count="suggestions">0</span></button>
+            <button class="mobile-tab" type="button" role="tab" data-stage="practice" aria-selected="false">Practice <span data-count="practice">0</span></button>
+            <button class="mobile-tab" type="button" role="tab" data-stage="ready" aria-selected="false">Gig Ready <span data-count="ready">0</span></button>
+          </div>
+
+          <div id="board" class="board">
+            <section class="lane lane-suggestions active" data-stage="suggestions" aria-labelledby="heading-suggestions">
+              <div class="lane-header"><div><span class="lane-number">01</span><h2 id="heading-suggestions">Suggestions</h2></div><span class="lane-count" data-count="suggestions">0</span></div>
+              <p class="lane-description">Songs we’re thinking about.</p>
+              <div class="song-list" data-list="suggestions"></div>
+            </section>
+            <section class="lane lane-practice" data-stage="practice" aria-labelledby="heading-practice">
+              <div class="lane-header"><div><span class="lane-number">02</span><h2 id="heading-practice">To Be Practiced</h2></div><span class="lane-count" data-count="practice">0</span></div>
+              <p class="lane-description">On the rehearsal agenda.</p>
+              <div class="song-list" data-list="practice"></div>
+            </section>
+            <section class="lane lane-ready" data-stage="ready" aria-labelledby="heading-ready">
+              <div class="lane-header"><div><span class="lane-number">03</span><h2 id="heading-ready">Gig Ready</h2></div><span class="lane-count" data-count="ready">0</span></div>
+              <p class="lane-description">Ready when the lights go up.</p>
+              <div class="song-list" data-list="ready"></div>
+            </section>
+          </div>
+          <p id="board-message" class="board-message" role="status" aria-live="polite"></p>
+        </section>
+      </main>
+
+      <footer class="site-footer"><span>EMPTY THREATS <span class="footer-star">✳</span> SONG BOARD</span><span>TURN IT UP. PLAY IT LOUD.</span></footer>
+    </div>
+
+    <dialog id="song-dialog" class="song-dialog" aria-labelledby="dialog-title">
+      <form id="song-form" class="song-form">
+        <div class="dialog-top"><span class="eyebrow">EMPTY THREATS / SONG BOARD</span><button id="close-dialog" class="close-button" type="button" aria-label="Close">×</button></div>
+        <h2 id="dialog-title">Add a song</h2>
+        <p class="dialog-intro">Got something we should play? Put it on the board.</p>
+        <div class="form-grid">
+          <div class="field"><label for="song-title">Song <span>*</span></label><input id="song-title" name="title" maxlength="120" placeholder="e.g. Everlong" required /></div>
+          <div class="field"><label for="song-artist">Artist <span>*</span></label><input id="song-artist" name="artist" maxlength="120" placeholder="e.g. Foo Fighters" required /></div>
+          <div class="field"><label for="song-suggested-by">Suggested by <span>*</span></label><input id="song-suggested-by" name="suggested_by" maxlength="80" placeholder="Your name" required /></div>
+          <div class="field"><label for="song-notes">Notes <span class="optional">optional</span></label><textarea id="song-notes" name="notes" rows="4" maxlength="1000" placeholder="Key, version, arrangement ideas..."></textarea></div>
+        </div>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button id="cancel-dialog" class="button button-secondary" type="button">Cancel</button><button id="save-song" class="button button-primary" type="submit">Add to suggestions <span aria-hidden="true">↗</span></button></div>
+      </form>
+    </dialog>
+  </body>
+</html>
