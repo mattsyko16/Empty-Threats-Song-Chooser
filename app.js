@@ -106,6 +106,21 @@ async function handleSession(session) {
   if (version === state.sessionVersion) subscribeToSongs();
 }
 
+async function ensureAnonymousSession() {
+  const current = await state.client.auth.getSession();
+  if (current.error) throw new Error(`Couldn’t check this browser’s session: ${current.error.message}`);
+  if (current.data.session?.access_token) {
+    state.session = current.data.session;
+    return current.data.session;
+  }
+  const anonymous = await state.client.auth.signInAnonymously();
+  if (anonymous.error || !anonymous.data.session?.access_token) {
+    throw new Error(`Couldn’t start anonymous access: ${anonymous.error?.message || "No session was returned"}. Check that Anonymous Sign-Ins are enabled in Supabase.`);
+  }
+  state.session = anonymous.data.session;
+  return anonymous.data.session;
+}
+
 function openSongDialog(song = null) {
   state.editingId = song?.id ?? null;
   $("#song-form").reset();
@@ -232,18 +247,27 @@ async function init() {
     const button = event.currentTarget.querySelector("button");
     button.disabled = true;
     authMessage("Checking the band code…");
-    const { data, error } = await state.client.rpc("join_band", { p_code: code, p_name: name });
-    if (error || !data) authMessage(error ? `Couldn’t check the code: ${error.message}` : "That code didn’t match. Check it with the band admin.", "error");
-    else { localStorage.setItem("empty-threats-name", name); $("#band-code").value = ""; await handleSession(state.session); }
-    button.disabled = false;
+    try {
+      const session = await ensureAnonymousSession();
+      const { data, error } = await state.client.rpc("join_band", { p_code: code, p_name: name });
+      if (error) {
+        const message = /permission denied for function/i.test(error.message)
+          ? "Supabase hasn’t granted access to the join function. Ask the band admin to run repair-access.sql in the SQL Editor, then try again."
+          : `Couldn’t check the code: ${error.message}`;
+        authMessage(message, "error");
+      } else if (!data) {
+        authMessage("That code didn’t match. Check it with the band admin.", "error");
+      } else {
+        localStorage.setItem("empty-threats-name", name);
+        $("#band-code").value = "";
+        await handleSession(session);
+      }
+    } catch (error) { authMessage(error.message || "Couldn’t connect to Supabase.", "error"); }
+    finally { button.disabled = false; }
   });
   state.client.auth.onAuthStateChange((_event, session) => { if (session) setTimeout(() => { void handleSession(session); }, 0); });
-  const { data, error } = await state.client.auth.getSession();
-  if (error) { showView("auth"); authMessage(error.message, "error"); return; }
-  if (data.session) { await handleSession(data.session); return; }
-  const anonymous = await state.client.auth.signInAnonymously();
-  if (anonymous.error) { showView("auth"); authMessage(`Couldn’t start anonymous access: ${anonymous.error.message}. Check that anonymous sign-ins are enabled in Supabase.`, "error"); return; }
-  await handleSession(anonymous.data.session);
+  try { await handleSession(await ensureAnonymousSession()); }
+  catch (error) { showView("auth"); authMessage(error.message, "error"); }
 }
 
 void init();
