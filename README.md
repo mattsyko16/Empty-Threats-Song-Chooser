@@ -4,7 +4,7 @@ A mobile-friendly, shared song board for the band. Songs move from **Suggestions
 
 ## How access works
 
-The band admin sets one long, private access code in Supabase. Each member enters their name and that code once per browser. Supabase creates an anonymous account for that browser; the database remembers that browser as a member. The code is checked on the server and is **not** stored in the website files.
+The band admin sets one long, private access code in Supabase. Each member enters their first name and that code once per browser. Supabase creates an anonymous account for that browser; the database remembers that browser as a member. The code is checked on the server and is **not** stored in the website files.
 
 Anyone who learns the code can join the board. Share it only with band members. Clearing browser data or using a new device means entering the code again. Changing the code stops new joins with the old code but does not remove existing members; see **Manage access** below.
 
@@ -12,6 +12,7 @@ Anyone who learns the code can join the board. Share it only with band members. 
 
 - `index.html` — the page and forms
 - `styles.css` — responsive design
+- `assets/empty-threats-logo.jpg` — band logo shown in the header
 - `app.js` — song board, band code entry, live updates
 - `config.js` — public Supabase project URL and publishable key
 - `supabase.sql` — tables, access rules, and live update setup
@@ -53,9 +54,9 @@ You do not need to configure email templates, SMTP, or authentication redirect U
 
 ## Publish on GitHub Pages
 
-1. Put all six app and setup files in a GitHub repository's root and commit them.
+1. Put the app and setup files in a GitHub repository's root and commit them, keeping the `assets` folder with the logo.
 2. In the repository's **Settings → Pages**, choose **Deploy from a branch**, select the branch containing the files, and use `/ (root)`.
-3. Open the Pages URL. Enter your name and the band code to join. Have another member open the same URL on their device and use the same code to confirm that songs sync.
+3. Open the Pages URL. Enter your first name and the band code to join. Have another member open the same URL on their device and use the same code to confirm that songs sync.
 
 For a quick local preview, open `index.html` in a browser. If `config.js` is blank, the app runs in clearly labeled **Demo mode** with sample songs saved only in that browser. Entering Supabase settings switches it to the shared board. Once configured, serve the files over HTTP for reliable local testing, for example with `python -m http.server 8000`.
 

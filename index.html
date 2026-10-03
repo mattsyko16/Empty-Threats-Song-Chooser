@@ -15,8 +15,7 @@
     <div id="app">
       <header class="site-header">
         <a class="brand" href="./" aria-label="Empty Threats song board home">
-          <span class="brand-mark" aria-hidden="true">ET<span class="brand-mark-dot">.</span></span>
-          <span class="brand-copy"><strong>EMPTY THREATS</strong><small>THE SONG BOARD</small></span>
+          <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
         </a>
       </header>
 
@@ -33,8 +32,8 @@
             <h2>Band members, come on in.</h2>
             <p>Enter the shared band code to open the song board.</p>
             <form id="join-form">
-              <label for="band-name">Your name</label>
-              <input id="band-name" name="band_name" type="text" autocomplete="name" maxlength="80" placeholder="What should we call you?" required />
+              <label for="band-name">Your first name</label>
+              <input id="band-name" name="band_name" type="text" autocomplete="given-name" maxlength="80" placeholder="e.g. Matt" required />
               <label for="band-code">Band access code</label>
               <input id="band-code" name="band_code" type="password" autocomplete="off" minlength="16" placeholder="Enter the band code" required />
               <button class="button button-primary full-width" type="submit">Open song board <span aria-hidden="true">↗</span></button>
@@ -101,7 +100,7 @@
         <div class="form-grid">
           <div class="field"><label for="song-title">Song <span>*</span></label><input id="song-title" name="title" maxlength="120" placeholder="e.g. Everlong" required /></div>
           <div class="field"><label for="song-artist">Artist <span>*</span></label><input id="song-artist" name="artist" maxlength="120" placeholder="e.g. Foo Fighters" required /></div>
-          <div class="field"><label for="song-suggested-by">Suggested by <span>*</span></label><input id="song-suggested-by" name="suggested_by" maxlength="80" placeholder="Your name" required /></div>
+          <div class="field"><label for="song-suggested-by">Suggested by (first name) <span>*</span></label><input id="song-suggested-by" name="suggested_by" maxlength="80" placeholder="First name" required /></div>
           <div class="field"><label for="song-notes">Notes <span class="optional">optional</span></label><textarea id="song-notes" name="notes" rows="4" maxlength="1000" placeholder="Key, version, arrangement ideas..."></textarea></div>
         </div>
         <p id="form-error" class="form-error" role="alert"></p>
