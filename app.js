@@ -2,6 +2,7 @@
 
 const STAGES = ["suggestions", "practice", "ready"];
 const DEMO_KEY = "empty-threats-demo-songs-v1";
+const LINK_LABEL = "Song link: ";
 const state = { client: null, session: null, demo: false, songs: [], activeStage: "suggestions", search: "", editingId: null, channel: null, sessionVersion: 0 };
 const $ = (selector) => document.querySelector(selector);
 
@@ -21,6 +22,30 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(date);
 }
 
+function songLinkService(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    const host = url.hostname.toLowerCase();
+    if (host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")) return "YouTube";
+    if (host === "spotify.com" || host.endsWith(".spotify.com") || host === "spotify.link") return "Spotify";
+  } catch { /* Invalid URL. */ }
+  return null;
+}
+
+function unpackSongNotes(value) {
+  const notes = String(value || "");
+  const marker = notes.lastIndexOf(`\n\n${LINK_LABEL}`);
+  const start = marker >= 0 ? marker + 2 : notes.startsWith(LINK_LABEL) ? 0 : -1;
+  if (start < 0) return { text: notes, link: "" };
+  const link = notes.slice(start + LINK_LABEL.length).trim();
+  return songLinkService(link) ? { text: notes.slice(0, marker >= 0 ? marker : 0), link } : { text: notes, link: "" };
+}
+
+function packSongNotes(text, link) {
+  return [text, link ? `${LINK_LABEL}${link}` : ""].filter(Boolean).join("\n\n") || null;
+}
+
 function showView(view) {
   $("#auth-view").hidden = view !== "auth";
   $("#board-view").hidden = view !== "board";
@@ -35,12 +60,15 @@ function authMessage(message = "", kind = "") {
 
 function cardHtml(song) {
   const index = STAGES.indexOf(song.stage);
+  const { text: notes, link } = unpackSongNotes(song.notes);
+  const service = link ? songLinkService(link) : null;
   const back = index > 0 ? `<button class="move-button back" type="button" data-action="move" data-to="${STAGES[index - 1]}" aria-label="Move ${escapeHtml(song.title)} back to ${index === 1 ? "Suggestions" : "To Be Practiced"}">← ${index === 1 ? "Suggestions" : "Practice"}</button>` : "";
   const forward = index < 2 ? `<button class="move-button forward" type="button" data-action="move" data-to="${STAGES[index + 1]}" aria-label="Move ${escapeHtml(song.title)} to ${index === 0 ? "To Be Practiced" : "Gig Ready"}">${index === 0 ? "To be practiced" : "Gig ready"} →</button>` : "";
   return `<article class="song-card" data-id="${escapeHtml(song.id)}">
     <div class="card-top"><div><h3>${escapeHtml(song.title)}</h3><p class="artist">${escapeHtml(song.artist)}</p></div>
       <div class="card-tools"><button class="card-tool" type="button" data-action="edit" title="Edit song" aria-label="Edit ${escapeHtml(song.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z"></path></svg></button><button class="card-tool delete" type="button" data-action="delete" title="Delete song" aria-label="Delete ${escapeHtml(song.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 3h4M6 7l1 14h10l1-14M10 11v6M14 11v6"></path></svg></button></div></div>
-    ${song.notes ? `<p class="song-notes">${escapeHtml(song.notes)}</p>` : ""}
+    ${notes ? `<p class="song-notes">${escapeHtml(notes)}</p>` : ""}
+    ${service ? `<a class="song-link" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" aria-label="${service === "YouTube" ? "Watch" : "Listen to"} ${escapeHtml(song.title)} on ${service} (opens in a new tab)">${service === "YouTube" ? "Watch on YouTube" : "Listen on Spotify"} <span aria-hidden="true">↗</span></a>` : ""}
     <div class="song-meta"><span class="suggested-by">Suggested by <strong>${escapeHtml(song.suggested_by)}</strong></span><span class="song-date">${escapeHtml(formatDate(song.created_at))}</span></div>
     <div class="card-actions">${back}${forward}</div>
   </article>`;
@@ -131,7 +159,9 @@ function openSongDialog(song = null) {
     $("#song-title").value = song.title;
     $("#song-artist").value = song.artist;
     $("#song-suggested-by").value = song.suggested_by;
-    $("#song-notes").value = song.notes || "";
+    const { text, link } = unpackSongNotes(song.notes);
+    $("#song-notes").value = text;
+    $("#song-link").value = link;
   } else {
     $("#song-suggested-by").value = localStorage.getItem("empty-threats-name") || "";
   }
@@ -143,11 +173,15 @@ async function saveSong(event) {
   event.preventDefault();
   const form = $("#song-form");
   if (!form.reportValidity()) return;
+  const link = $("#song-link").value.trim();
+  if (link && !songLinkService(link)) { $("#form-error").textContent = "Please use a full HTTPS YouTube or Spotify link."; return; }
+  const notes = packSongNotes($("#song-notes").value.trim(), link);
+  if (notes && notes.length > 1000) { $("#form-error").textContent = "Notes and link together must be under 1,000 characters. Shorten the notes or link."; return; }
   const payload = {
     title: $("#song-title").value.trim(),
     artist: $("#song-artist").value.trim(),
     suggested_by: $("#song-suggested-by").value.trim(),
-    notes: $("#song-notes").value.trim() || null
+    notes
   };
   if (!payload.title || !payload.artist || !payload.suggested_by) { $("#form-error").textContent = "Please fill in Song, Artist, and Suggested by."; return; }
   const button = $("#save-song");

@@ -2,6 +2,8 @@
 
 A mobile-friendly, shared song board for the band. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
 
+When adding or editing a song, paste an optional HTTPS YouTube or Spotify link. The song card then shows a button to open it. Links share the existing notes field in Supabase, so an existing board needs no database migration. Notes and link together can use up to 1,000 characters.
+
 ## How access works
 
 The band admin sets one long, private access code in Supabase. Each member enters their first name and that code once per browser. Supabase creates an anonymous account for that browser; the database remembers that browser as a member. The code is checked on the server and is **not** stored in the website files.
