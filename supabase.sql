@@ -27,6 +27,13 @@ create table public.songs (
   updated_at timestamptz not null default now()
 );
 
+create table public.song_likes (
+  song_id uuid not null references public.songs (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (song_id, user_id)
+);
+
 create index songs_stage_updated_at_idx on public.songs (stage, updated_at desc);
 
 create function public.touch_song_updated_at()
@@ -47,13 +54,16 @@ for each row execute function public.touch_song_updated_at();
 alter table public.band_settings enable row level security;
 alter table public.band_members enable row level security;
 alter table public.songs enable row level security;
+alter table public.song_likes enable row level security;
 
 -- The code hash cannot be read through the browser API.
 revoke all on table public.band_settings from anon, authenticated;
 revoke all on table public.band_members from anon, authenticated;
 revoke all on table public.songs from anon, authenticated;
+revoke all on table public.song_likes from anon, authenticated;
 grant select on table public.band_members to authenticated;
 grant select, insert, update, delete on table public.songs to authenticated;
+grant select, insert, delete on table public.song_likes to authenticated;
 
 create policy "Members can see their own membership"
 on public.band_members for select to authenticated
@@ -96,6 +106,39 @@ create policy "Members can delete songs"
 on public.songs for delete to authenticated
 using (
   exists (
+    select 1 from public.band_members
+    where user_id = (select auth.uid())
+  )
+);
+
+create policy "Members can see likes"
+on public.song_likes for select to authenticated
+using (
+  exists (
+    select 1 from public.band_members
+    where user_id = (select auth.uid())
+  )
+);
+
+create policy "Members can like suggestions"
+on public.song_likes for insert to authenticated
+with check (
+  user_id = (select auth.uid())
+  and exists (
+    select 1 from public.band_members
+    where user_id = (select auth.uid())
+  )
+  and exists (
+    select 1 from public.songs
+    where id = song_id and stage = 'suggestions'
+  )
+);
+
+create policy "Members can remove their likes"
+on public.song_likes for delete to authenticated
+using (
+  user_id = (select auth.uid())
+  and exists (
     select 1 from public.band_members
     where user_id = (select auth.uid())
   )
@@ -152,6 +195,7 @@ grant execute on function public.join_band(text, text) to authenticated;
 
 -- Enables live updates when another member changes the board.
 alter publication supabase_realtime add table public.songs;
+alter publication supabase_realtime add table public.song_likes;
 
 -- Set the real band code after running this schema. Use a long random code:
 -- update public.band_settings

@@ -54,6 +54,8 @@
             <button id="add-song" class="button button-primary add-button" type="button"><span class="plus" aria-hidden="true">＋</span> Add a song</button>
           </div>
 
+          <p id="likes-setup-message" class="setup-message" role="status" hidden>Likes aren’t ready yet. Ask the band admin to finish the Supabase setup, then refresh.</p>
+
           <div class="toolbar">
             <div class="board-summary"><span id="total-count" class="total-count">0</span><span>songs in the mix</span></div>
             <div class="toolbar-actions">
@@ -72,6 +74,10 @@
             <section class="lane lane-suggestions active" data-stage="suggestions" aria-labelledby="heading-suggestions">
               <div class="lane-header"><div><span class="lane-number">01</span><h2 id="heading-suggestions">Suggestions</h2></div><span class="lane-count" data-count="suggestions">0</span></div>
               <p class="lane-description">Songs we’re thinking about.</p>
+              <div class="suggestion-orders" role="group" aria-label="Suggestion order">
+                <button class="suggestion-order active" type="button" data-order="added" aria-pressed="true">Added order</button>
+                <button class="suggestion-order" type="button" data-order="votes" aria-pressed="false">Vote order</button>
+              </div>
               <div class="song-list" data-list="suggestions"></div>
             </section>
             <section class="lane lane-practice" data-stage="practice" aria-labelledby="heading-practice">

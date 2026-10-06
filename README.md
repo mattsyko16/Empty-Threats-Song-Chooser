@@ -2,6 +2,8 @@
 
 A mobile-friendly, shared song board for the band. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
 
+Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
+
 When adding or editing a song, paste an optional HTTPS YouTube or Spotify link. The song card then shows a button to open it. Links share the existing notes field in Supabase, so an existing board needs no database migration. Notes and link together can use up to 1,000 characters.
 
 ## How access works
@@ -18,8 +20,17 @@ Anyone who learns the code can join the board. Share it only with band members. 
 - `app.js` — song board, band code entry, live updates
 - `config.js` — public Supabase project URL and publishable key
 - `supabase.sql` — tables, access rules, and live update setup
+- `add-likes.sql` — upgrade for an existing Supabase project
 
 The page is plain HTML, CSS, and JavaScript. It needs no build step and works from the root of a GitHub Pages repository or a project subpath.
+
+## Enable likes on the existing band board
+
+1. Open the existing Empty Threats project in [Supabase](https://supabase.com/dashboard).
+2. Open **SQL Editor → New query**. Paste the entire contents of `add-likes.sql` and run it.
+3. Refresh the website. Suggestions will show a Like button and the two order views. The script keeps existing songs, memberships, and the band code.
+
+For a brand-new Supabase project, use `supabase.sql` instead; it already includes likes.
 
 ## Set up Supabase
 

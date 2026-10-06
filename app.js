@@ -2,8 +2,9 @@
 
 const STAGES = ["suggestions", "practice", "ready"];
 const DEMO_KEY = "empty-threats-demo-songs-v1";
+const DEMO_LIKES_KEY = "empty-threats-demo-likes-v1";
 const LINK_LABEL = "Song link: ";
-const state = { client: null, session: null, demo: false, songs: [], activeStage: "suggestions", search: "", editingId: null, channel: null, sessionVersion: 0 };
+const state = { client: null, session: null, demo: false, songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, sessionVersion: 0 };
 const $ = (selector) => document.querySelector(selector);
 
 const sampleSongs = [
@@ -52,16 +53,22 @@ function showView(view) {
 }
 
 function boardMessage(message = "") { $("#board-message").textContent = message; }
+function memberId() { return state.demo ? "demo-member" : state.session?.user?.id; }
+function likeCount(songId) { return state.likes.filter((like) => like.song_id === songId).length; }
+function hasLiked(songId) { return state.likes.some((like) => like.song_id === songId && like.user_id === memberId()); }
 function authMessage(message = "", kind = "") {
   const element = $("#auth-message");
   element.textContent = message;
   element.className = `form-message ${kind}`;
 }
 
-function cardHtml(song) {
+function cardHtml(song, rank = null) {
   const index = STAGES.indexOf(song.stage);
   const { text: notes, link } = unpackSongNotes(song.notes);
   const service = link ? songLinkService(link) : null;
+  const liked = index === 0 && state.likesReady && hasLiked(song.id);
+  const count = rank === null ? 0 : likeCount(song.id);
+  const votes = index !== 0 || !state.likesReady ? "" : `<div class="song-votes">${rank === null ? "" : `<span class="song-rank">#${rank}</span>`}<button class="like-button${liked ? " liked" : ""}" type="button" data-action="like" aria-pressed="${liked}" aria-label="${liked ? "Unlike" : "Like"} ${escapeHtml(song.title)}${rank === null ? "" : `; ${count} ${count === 1 ? "like" : "likes"}`}"><span aria-hidden="true">♥</span> ${liked ? "Liked" : "Like"}${rank === null ? "" : ` <strong>${count}</strong>`}</button></div>`;
   const back = index > 0 ? `<button class="move-button back" type="button" data-action="move" data-to="${STAGES[index - 1]}" aria-label="Move ${escapeHtml(song.title)} back to ${index === 1 ? "Suggestions" : "To Be Practiced"}">← ${index === 1 ? "Suggestions" : "Practice"}</button>` : "";
   const forward = index < 2 ? `<button class="move-button forward" type="button" data-action="move" data-to="${STAGES[index + 1]}" aria-label="Move ${escapeHtml(song.title)} to ${index === 0 ? "To Be Practiced" : "Gig Ready"}">${index === 0 ? "To be practiced" : "Gig ready"} →</button>` : "";
   return `<article class="song-card" data-id="${escapeHtml(song.id)}">
@@ -69,6 +76,7 @@ function cardHtml(song) {
       <div class="card-tools"><button class="card-tool" type="button" data-action="edit" title="Edit song" aria-label="Edit ${escapeHtml(song.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z"></path></svg></button><button class="card-tool delete" type="button" data-action="delete" title="Delete song" aria-label="Delete ${escapeHtml(song.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 3h4M6 7l1 14h10l1-14M10 11v6M14 11v6"></path></svg></button></div></div>
     ${notes ? `<p class="song-notes">${escapeHtml(notes)}</p>` : ""}
     ${service ? `<a class="song-link" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" aria-label="${service === "YouTube" ? "Watch" : "Listen to"} ${escapeHtml(song.title)} on ${service} (opens in a new tab)">${service === "YouTube" ? "Watch on YouTube" : "Listen on Spotify"} <span aria-hidden="true">↗</span></a>` : ""}
+    ${votes}
     <div class="song-meta"><span class="suggested-by">Suggested by <strong>${escapeHtml(song.suggested_by)}</strong></span><span class="song-date">${escapeHtml(formatDate(song.created_at))}</span></div>
     <div class="card-actions">${back}${forward}</div>
   </article>`;
@@ -77,12 +85,23 @@ function cardHtml(song) {
 function renderBoard() {
   const term = state.search.trim().toLocaleLowerCase();
   $("#total-count").textContent = state.songs.length;
+  document.querySelectorAll(".suggestion-order").forEach((button) => {
+    const active = button.dataset.order === state.suggestionOrder;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.disabled = button.dataset.order === "votes" && !state.likesReady;
+  });
   for (const stage of STAGES) {
     const all = state.songs.filter((song) => song.stage === stage);
+    if (stage === "suggestions") {
+      all.sort((a, b) => (state.suggestionOrder === "votes" && state.likesReady ? likeCount(b.id) - likeCount(a.id) : 0)
+        || new Date(a.created_at) - new Date(b.created_at) || a.title.localeCompare(b.title));
+    }
+    const ranks = new Map(all.map((song, index) => [song.id, index + 1]));
     const visible = term ? all.filter((song) => [song.title, song.artist, song.suggested_by, song.notes].some((value) => String(value || "").toLocaleLowerCase().includes(term))) : all;
     document.querySelectorAll(`[data-count="${stage}"]`).forEach((element) => { element.textContent = all.length; });
     $(`[data-list="${stage}"]`).innerHTML = visible.length
-      ? visible.map(cardHtml).join("")
+      ? visible.map((song) => cardHtml(song, stage === "suggestions" && state.likesReady && state.suggestionOrder === "votes" ? ranks.get(song.id) : null)).join("")
       : `<div class="empty-state"><span aria-hidden="true">✳</span><strong>${term ? "No matching songs" : stage === "suggestions" ? "Start with a suggestion" : stage === "practice" ? "Nothing to practice yet" : "Nothing gig ready yet"}</strong><small>${term ? "Try another search." : stage === "suggestions" ? "Add a song to get the ideas flowing." : "Move a song here when it’s time."}</small></div>`;
   }
   document.querySelectorAll(".mobile-tab, .lane").forEach((element) => {
@@ -96,12 +115,20 @@ function renderBoard() {
 }
 
 function saveDemo() { localStorage.setItem(DEMO_KEY, JSON.stringify(state.songs)); }
+function saveDemoLikes() { localStorage.setItem(DEMO_LIKES_KEY, JSON.stringify(state.likes)); }
 
 async function loadSongs() {
   if (state.demo) { renderBoard(); return; }
-  const { data, error } = await state.client.from("songs").select("id,title,artist,suggested_by,notes,stage,created_at,updated_at").order("updated_at", { ascending: false });
-  if (error) { boardMessage(`Couldn’t load songs: ${error.message}`); return; }
-  state.songs = data || [];
+  const [songsResult, likesResult] = await Promise.all([
+    state.client.from("songs").select("id,title,artist,suggested_by,notes,stage,created_at,updated_at").order("updated_at", { ascending: false }),
+    state.client.from("song_likes").select("song_id,user_id")
+  ]);
+  if (songsResult.error) { boardMessage(`Couldn’t load songs: ${songsResult.error.message}`); return; }
+  state.songs = songsResult.data || [];
+  state.likesReady = !likesResult.error;
+  state.likes = likesResult.data || [];
+  if (!state.likesReady) state.suggestionOrder = "added";
+  $("#likes-setup-message").hidden = state.likesReady;
   boardMessage();
   renderBoard();
 }
@@ -112,7 +139,9 @@ function removeChannel() {
 
 function subscribeToSongs() {
   removeChannel();
-  state.channel = state.client.channel("empty-threats-songs").on("postgres_changes", { event: "*", schema: "public", table: "songs" }, () => { void loadSongs(); }).subscribe();
+  const channel = state.client.channel("empty-threats-songs").on("postgres_changes", { event: "*", schema: "public", table: "songs" }, () => { void loadSongs(); });
+  if (state.likesReady) channel.on("postgres_changes", { event: "*", schema: "public", table: "song_likes" }, () => { void loadSongs(); });
+  state.channel = channel.subscribe();
 }
 
 async function handleSession(session) {
@@ -220,11 +249,32 @@ async function moveSong(song, target, button) {
   } catch (error) { boardMessage(`Couldn’t move song: ${error.message}`); button.disabled = false; }
 }
 
+async function toggleLike(song, button) {
+  const userId = memberId();
+  if (!state.likesReady || !userId || song.stage !== "suggestions") return;
+  const liked = hasLiked(song.id);
+  button.disabled = true;
+  try {
+    if (state.demo) {
+      state.likes = liked
+        ? state.likes.filter((like) => like.song_id !== song.id || like.user_id !== userId)
+        : [...state.likes, { song_id: song.id, user_id: userId }];
+      saveDemoLikes();
+    } else {
+      const { error } = liked
+        ? await state.client.from("song_likes").delete().eq("song_id", song.id).eq("user_id", userId)
+        : await state.client.from("song_likes").insert({ song_id: song.id, user_id: userId });
+      if (error) throw error;
+    }
+    await loadSongs();
+  } catch (error) { boardMessage(`Couldn’t update like: ${error.message}`); button.disabled = false; }
+}
+
 async function deleteSong(song, button) {
   if (!window.confirm(`Delete “${song.title}” by ${song.artist}? This can’t be undone.`)) return;
   button.disabled = true;
   try {
-    if (state.demo) { state.songs = state.songs.filter((item) => item.id !== song.id); saveDemo(); }
+    if (state.demo) { state.songs = state.songs.filter((item) => item.id !== song.id); state.likes = state.likes.filter((like) => like.song_id !== song.id); saveDemo(); saveDemoLikes(); }
     else {
       const { error } = await state.client.from("songs").delete().eq("id", song.id);
       if (error) throw error;
@@ -237,6 +287,8 @@ function startDemo() {
   state.demo = true;
   try { state.songs = JSON.parse(localStorage.getItem(DEMO_KEY)) || sampleSongs; }
   catch { state.songs = sampleSongs; }
+  try { state.likes = JSON.parse(localStorage.getItem(DEMO_LIKES_KEY)) || []; }
+  catch { state.likes = []; }
   $("#demo-banner").hidden = false;
   $("#refresh").hidden = true;
   showView("board");
@@ -250,6 +302,11 @@ async function init() {
   $("#song-form").addEventListener("submit", saveSong);
   $("#search").addEventListener("input", (event) => { state.search = event.target.value; renderBoard(); });
   $("#refresh").addEventListener("click", () => { void loadSongs(); });
+  document.querySelectorAll(".suggestion-order").forEach((button) => button.addEventListener("click", () => {
+    if (button.dataset.order === "votes" && !state.likesReady) return;
+    state.suggestionOrder = button.dataset.order;
+    renderBoard();
+  }));
   document.querySelectorAll(".mobile-tab").forEach((tab) => tab.addEventListener("click", () => { state.activeStage = tab.dataset.stage; renderBoard(); }));
   $(".mobile-tabs").addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -265,6 +322,7 @@ async function init() {
     const song = state.songs.find((item) => item.id === button.closest(".song-card")?.dataset.id);
     if (!song) return;
     if (button.dataset.action === "edit") openSongDialog(song);
+    if (button.dataset.action === "like") void toggleLike(song, button);
     if (button.dataset.action === "move") void moveSong(song, button.dataset.to, button);
     if (button.dataset.action === "delete") void deleteSong(song, button);
   });
