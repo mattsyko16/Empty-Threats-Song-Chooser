@@ -3,8 +3,10 @@
 const STAGES = ["suggestions", "practice", "ready"];
 const DEMO_KEY = "empty-threats-demo-songs-v1";
 const DEMO_LIKES_KEY = "empty-threats-demo-likes-v1";
+const DEMO_PICKS_KEY = "empty-threats-demo-challenge-picks-v1";
+const DEMO_RATINGS_KEY = "empty-threats-demo-challenge-ratings-v1";
 const LINK_LABEL = "Song link: ";
-const state = { client: null, session: null, demo: false, songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, sessionVersion: 0 };
+const state = { client: null, session: null, demo: false, memberName: "", songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, challengeChannel: null, challengePicks: [], challengeRatings: [], challengeReady: true, sessionVersion: 0 };
 const $ = (selector) => document.querySelector(selector);
 
 const sampleSongs = [
@@ -50,6 +52,14 @@ function packSongNotes(text, link) {
 function showView(view) {
   $("#auth-view").hidden = view !== "auth";
   $("#board-view").hidden = view !== "board";
+  $("#challenge-view").hidden = view !== "challenge";
+  $("#app-nav").hidden = view === "auth";
+  document.querySelectorAll(".app-nav-button").forEach((button) => {
+    const active = button.dataset.view === view;
+    button.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
 }
 
 function boardMessage(message = "") { $("#board-message").textContent = message; }
@@ -135,6 +145,7 @@ async function loadSongs() {
 
 function removeChannel() {
   if (state.channel) { state.client.removeChannel(state.channel); state.channel = null; }
+  if (state.challengeChannel) { state.client.removeChannel(state.challengeChannel); state.challengeChannel = null; }
 }
 
 function subscribeToSongs() {
@@ -146,9 +157,10 @@ function subscribeToSongs() {
 
 async function handleSession(session) {
   const version = ++state.sessionVersion;
+  const wasChallenge = !$("#challenge-view").hidden;
   state.session = session;
   removeChannel();
-  if (!session) { showView("auth"); authMessage(); return; }
+  if (!session) { state.memberName = ""; showView("auth"); authMessage(); return; }
   const { data, error } = await state.client.from("band_members").select("user_id,display_name").eq("user_id", session.user.id).maybeSingle();
   if (version !== state.sessionVersion) return;
   if (error || !data) {
@@ -157,10 +169,14 @@ async function handleSession(session) {
     return;
   }
   if (data.display_name) localStorage.setItem("empty-threats-name", data.display_name);
+  state.memberName = data.display_name;
   authMessage();
   showView("board");
   await loadSongs();
-  if (version === state.sessionVersion) subscribeToSongs();
+  if (version === state.sessionVersion) {
+    subscribeToSongs();
+    if (wasChallenge) await openChallenge();
+  }
 }
 
 async function ensureAnonymousSession() {
@@ -283,19 +299,173 @@ async function deleteSong(song, button) {
   } catch (error) { boardMessage(`Couldn’t delete song: ${error.message}`); button.disabled = false; }
 }
 
+function challengeMessage(message = "") { $("#challenge-message").textContent = message; }
+function saveDemoChallenge() {
+  localStorage.setItem(DEMO_PICKS_KEY, JSON.stringify(state.challengePicks));
+  localStorage.setItem(DEMO_RATINGS_KEY, JSON.stringify(state.challengeRatings));
+}
+
+function challengeScore(pick) {
+  const ratings = state.challengeRatings.filter((rating) => rating.pick_id === pick.id);
+  return { total: 5 + ratings.reduce((sum, rating) => sum + rating.score, 0),
+    fives: 1 + ratings.filter((rating) => rating.score === 5).length,
+    threes: ratings.filter((rating) => rating.score === 3).length,
+    ones: ratings.filter((rating) => rating.score === 1).length };
+}
+
+function challengeCardHtml(pick, rank) {
+  const score = challengeScore(pick);
+  const mine = pick.owner_user_id === memberId();
+  const myRating = state.challengeRatings.find((rating) => rating.pick_id === pick.id && rating.voter_user_id === memberId())?.score;
+  const service = pick.link_url ? songLinkService(pick.link_url) : null;
+  const buttons = mine
+    ? `<div class="challenge-own"><span>Your pick · automatic 5</span><button class="challenge-remove" type="button" data-action="remove-pick" aria-label="Remove ${escapeHtml(pick.title)} from your picks">Remove pick</button></div>`
+    : `<div class="challenge-rate"><span>Your rating</span><div class="rating-buttons" role="group" aria-label="Rate ${escapeHtml(pick.title)}">${[[5, "Love it"], [3, "It’s OK"], [1, "Hate it"]].map(([value, label]) => `<button type="button" data-action="rate" data-score="${value}" class="rating-button${myRating === value ? " selected" : ""}" aria-pressed="${myRating === value}" aria-label="${value} points: ${label} for ${escapeHtml(pick.title)}">${value} <small>${label}</small></button>`).join("")}</div></div>`;
+  return `<article class="challenge-card${score.ones ? " has-one" : ""}" data-id="${escapeHtml(pick.id)}">
+    <div class="challenge-card-top"><span class="challenge-rank">#${rank}</span><div class="challenge-song"><h3>${escapeHtml(pick.title)}</h3><p>${escapeHtml(pick.artist)} · Picked by ${escapeHtml(pick.picked_by)}</p></div><div class="challenge-points"><strong>${score.total}</strong><span>points</span></div></div>
+    ${score.ones ? `<p class="challenge-warning">⚠ Received ${score.ones} ${score.ones === 1 ? "rating" : "ratings"} of 1 — discuss before learning</p>` : ""}
+    <div class="challenge-breakdown"><span>♥ ${score.fives} love</span><span>● ${score.threes} OK</span><span>▼ ${score.ones} hate</span></div>
+    ${service ? `<a class="song-link" href="${escapeHtml(pick.link_url)}" target="_blank" rel="noopener noreferrer">${service === "YouTube" ? "Watch on YouTube" : "Listen on Spotify"} ↗</a>` : ""}
+    ${buttons}
+  </article>`;
+}
+
+function renderChallenge() {
+  const myCount = state.challengePicks.filter((pick) => pick.owner_user_id === memberId()).length;
+  $("#my-pick-count").textContent = `${myCount} of 4`;
+  $("#add-pick").disabled = !state.challengeReady || myCount >= 4;
+  $("#add-pick").title = myCount >= 4 ? "Remove one of your picks to add another" : "";
+  $("#challenge-setup-message").hidden = state.challengeReady;
+  const ranked = [...state.challengePicks].sort((a, b) => challengeScore(b).total - challengeScore(a).total
+    || new Date(a.created_at) - new Date(b.created_at) || a.id.localeCompare(b.id));
+  $("#challenge-list").innerHTML = ranked.length ? ranked.map((pick, index) => challengeCardHtml(pick, index + 1)).join("")
+    : `<div class="empty-state"><span aria-hidden="true">✳</span><strong>No picks yet</strong><small>Add your first song to start the challenge.</small></div>`;
+}
+
+async function loadChallenge() {
+  if (state.demo) { renderChallenge(); return; }
+  const [picksResult, ratingsResult] = await Promise.all([
+    state.client.from("challenge_picks").select("id,owner_user_id,picked_by,title,artist,link_url,created_at"),
+    state.client.from("challenge_ratings").select("pick_id,voter_user_id,score")
+  ]);
+  state.challengeReady = !picksResult.error && !ratingsResult.error;
+  if (!state.challengeReady) {
+    state.challengePicks = [];
+    state.challengeRatings = [];
+    challengeMessage("The challenge could not load. Ask the band admin to finish the Supabase setup, then refresh.");
+  } else {
+    state.challengePicks = picksResult.data || [];
+    state.challengeRatings = ratingsResult.data || [];
+    challengeMessage();
+  }
+  renderChallenge();
+}
+
+function subscribeToChallenge() {
+  if (state.demo || !state.challengeReady || state.challengeChannel) return;
+  state.challengeChannel = state.client.channel("empty-threats-challenge")
+    .on("postgres_changes", { event: "*", schema: "public", table: "challenge_picks" }, () => { void loadChallenge(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "challenge_ratings" }, () => { void loadChallenge(); })
+    .subscribe();
+}
+
+async function openChallenge() {
+  showView("challenge");
+  await loadChallenge();
+  subscribeToChallenge();
+}
+
+async function savePick(event) {
+  event.preventDefault();
+  const form = $("#pick-form");
+  if (!form.reportValidity()) return;
+  const link = $("#pick-link").value.trim();
+  if (link && !songLinkService(link)) { $("#pick-form-error").textContent = "Please use a full HTTPS YouTube or Spotify link."; return; }
+  const payload = { owner_user_id: memberId(), picked_by: state.memberName, title: $("#pick-title").value.trim(), artist: $("#pick-artist").value.trim(), link_url: link || null };
+  if (!payload.title || !payload.artist || !payload.picked_by) { $("#pick-form-error").textContent = "Please enter a song and artist."; return; }
+  const button = $("#save-pick");
+  button.disabled = true;
+  try {
+    if (state.demo) { state.challengePicks.push({ ...payload, id: `demo-pick-${Date.now()}-${Math.random().toString(36).slice(2)}`, created_at: new Date().toISOString() }); saveDemoChallenge(); }
+    else { const { error } = await state.client.from("challenge_picks").insert(payload); if (error) throw error; }
+    $("#pick-dialog").close();
+    await loadChallenge();
+  } catch (error) { $("#pick-form-error").textContent = error.message || "Couldn’t add your pick."; }
+  finally { button.disabled = false; }
+}
+
+async function ratePick(pick, score, button) {
+  if (pick.owner_user_id === memberId() || ![1, 3, 5].includes(score)) return;
+  const current = state.challengeRatings.find((rating) => rating.pick_id === pick.id && rating.voter_user_id === memberId());
+  button.disabled = true;
+  try {
+    if (state.demo) {
+      state.challengeRatings = state.challengeRatings.filter((rating) => rating !== current);
+      if (current?.score !== score) state.challengeRatings.push({ pick_id: pick.id, voter_user_id: memberId(), score });
+      saveDemoChallenge();
+    } else {
+      const query = state.client.from("challenge_ratings");
+      const result = current?.score === score ? await query.delete().eq("pick_id", pick.id).eq("voter_user_id", memberId())
+        : current ? await query.update({ score }).eq("pick_id", pick.id).eq("voter_user_id", memberId())
+          : await query.insert({ pick_id: pick.id, voter_user_id: memberId(), score });
+      if (result.error) throw result.error;
+    }
+    await loadChallenge();
+  } catch (error) { challengeMessage(`Couldn’t save rating: ${error.message}`); button.disabled = false; }
+}
+
+async function removePick(pick, button) {
+  if (pick.owner_user_id !== memberId()) return;
+  if (!window.confirm(`Remove “${pick.title}” from your picks? Its ratings will also be removed.`)) return;
+  button.disabled = true;
+  try {
+    if (state.demo) { state.challengePicks = state.challengePicks.filter((item) => item.id !== pick.id); state.challengeRatings = state.challengeRatings.filter((rating) => rating.pick_id !== pick.id); saveDemoChallenge(); }
+    else { const { error } = await state.client.from("challenge_picks").delete().eq("id", pick.id).eq("owner_user_id", memberId()); if (error) throw error; }
+    await loadChallenge();
+  } catch (error) { challengeMessage(`Couldn’t remove pick: ${error.message}`); button.disabled = false; }
+}
+
 function startDemo() {
   state.demo = true;
   try { state.songs = JSON.parse(localStorage.getItem(DEMO_KEY)) || sampleSongs; }
   catch { state.songs = sampleSongs; }
   try { state.likes = JSON.parse(localStorage.getItem(DEMO_LIKES_KEY)) || []; }
   catch { state.likes = []; }
+  state.memberName = localStorage.getItem("empty-threats-name") || "You";
+  try { state.challengePicks = JSON.parse(localStorage.getItem(DEMO_PICKS_KEY)) || []; }
+  catch { state.challengePicks = []; }
+  try { state.challengeRatings = JSON.parse(localStorage.getItem(DEMO_RATINGS_KEY)) || []; }
+  catch { state.challengeRatings = []; }
   $("#demo-banner").hidden = false;
+  $("#challenge-demo-banner").hidden = false;
   $("#refresh").hidden = true;
   showView("board");
   renderBoard();
 }
 
 async function init() {
+  document.querySelectorAll(".app-nav-button").forEach((button) => button.addEventListener("click", () => {
+    if (button.dataset.view === "challenge") void openChallenge();
+    else showView("board");
+  }));
+  $("#add-pick").addEventListener("click", () => {
+    $("#pick-form").reset();
+    $("#pick-form-error").textContent = "";
+    $("#pick-dialog").showModal();
+    $("#pick-title").focus();
+  });
+  $("#close-pick-dialog").addEventListener("click", () => $("#pick-dialog").close());
+  $("#cancel-pick-dialog").addEventListener("click", () => $("#pick-dialog").close());
+  $("#pick-form").addEventListener("submit", savePick);
+  $("#refresh-challenge").addEventListener("click", () => { void loadChallenge(); });
+  $("#challenge-list").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const pick = state.challengePicks.find((item) => item.id === button.closest(".challenge-card")?.dataset.id);
+    if (!pick) return;
+    if (button.dataset.action === "rate") void ratePick(pick, Number(button.dataset.score), button);
+    if (button.dataset.action === "remove-pick") void removePick(pick, button);
+  });
   $("#add-song").addEventListener("click", () => openSongDialog());
   $("#close-dialog").addEventListener("click", () => $("#song-dialog").close());
   $("#cancel-dialog").addEventListener("click", () => $("#song-dialog").close());

@@ -4,6 +4,8 @@ A mobile-friendly, shared song board for the band. Songs move from **Suggestions
 
 Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
 
+The **4-Song Challenge** is a separate screen. Each joined browser can nominate up to four songs. The nominator automatically gives each pick 5 points; every other joined browser can rate it **5 (Love it), 3 (It's OK), or 1 (Hate it)**. Tap a rating again to clear it. The leaderboard ranks by total points, with earlier picks first on a tie. A song with any 1 is prominently flagged, even if it ranks highly. Members can remove their own picks, which also removes their ratings, and nominate replacements. Pick titles cannot be edited after voting; remove and re-add a pick to correct it.
+
 When adding or editing a song, paste an optional HTTPS YouTube or Spotify link. The song card then shows a button to open it. Links share the existing notes field in Supabase, so an existing board needs no database migration. Notes and link together can use up to 1,000 characters.
 
 ## How access works
@@ -21,6 +23,7 @@ Anyone who learns the code can join the board. Share it only with band members. 
 - `config.js` — public Supabase project URL and publishable key
 - `supabase.sql` — tables, access rules, and live update setup
 - `add-likes.sql` — upgrade for an existing Supabase project
+- `add-challenge.sql` — upgrade for the four-song challenge on an existing Supabase project
 
 The page is plain HTML, CSS, and JavaScript. It needs no build step and works from the root of a GitHub Pages repository or a project subpath.
 
@@ -31,6 +34,14 @@ The page is plain HTML, CSS, and JavaScript. It needs no build step and works fr
 3. Refresh the website. Suggestions will show a Like button and the two order views. The script keeps existing songs, memberships, and the band code.
 
 For a brand-new Supabase project, use `supabase.sql` instead; it already includes likes.
+
+## Enable the 4-Song Challenge on the existing band board
+
+1. Open the existing Empty Threats project in [Supabase](https://supabase.com/dashboard).
+2. Open **SQL Editor → New query**. Paste the entire contents of `add-challenge.sql` and run it once. The script can safely be run again if needed. It keeps the current song board and access code.
+3. Refresh the website and open **4-Song Challenge** in the header. Each member can add four picks and rate everyone else's picks.
+
+The limit and one-rating-per-browser rule are enforced in Supabase. Since access is anonymous per browser, a person using a second browser or a cleared browser profile gets a new membership after entering the band code and can nominate and rate again. First names are labels, not verified identities.
 
 ## Set up Supabase
 

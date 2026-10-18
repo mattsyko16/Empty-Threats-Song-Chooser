@@ -17,6 +17,10 @@
         <a class="brand" href="./" aria-label="Empty Threats song board home">
           <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
         </a>
+        <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
+          <button type="button" data-view="board" class="app-nav-button active" aria-current="page">Song Board</button>
+          <button type="button" data-view="challenge" class="app-nav-button">4-Song Challenge</button>
+        </nav>
       </header>
 
       <main>
@@ -93,6 +97,25 @@
           </div>
           <p id="board-message" class="board-message" role="status" aria-live="polite"></p>
         </section>
+        <section id="challenge-view" class="board-view challenge-view" hidden>
+          <div id="challenge-demo-banner" class="demo-banner" hidden><strong>Demo mode</strong> · Challenge picks and ratings stay in this browser.</div>
+          <div class="hero">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-line"></span> BAND HQ / NEXT SONGS</p>
+              <h1>Pick four. <em>Rate them.</em></h1>
+              <p class="hero-subtitle">Each member picks up to four songs. Everyone else scores each pick 5, 3, or 1.</p>
+            </div>
+            <button id="add-pick" class="button button-primary add-button" type="button"><span class="plus" aria-hidden="true">＋</span> Add my pick</button>
+          </div>
+          <div class="challenge-summary">
+            <div><strong id="my-pick-count">0 of 4</strong><span> my picks</span></div>
+            <p>The picker starts with 5 points. Highest total leads. Any 1 is flagged, whatever the score.</p>
+          </div>
+          <p id="challenge-setup-message" class="setup-message" role="status" hidden>Challenge setup is needed in Supabase. Ask the band admin to run <code>add-challenge.sql</code>, then refresh.</p>
+          <div class="challenge-heading"><h2>Leaderboard</h2><button id="refresh-challenge" class="button button-secondary" type="button">Refresh</button></div>
+          <div id="challenge-list" class="challenge-list"></div>
+          <p id="challenge-message" class="board-message" role="status" aria-live="polite"></p>
+        </section>
       </main>
 
       <footer class="site-footer"><span>EMPTY THREATS <span class="footer-star">✳</span> SONG BOARD</span><span>TURN IT UP. PLAY IT LOUD.</span></footer>
@@ -112,6 +135,20 @@
         </div>
         <p id="form-error" class="form-error" role="alert"></p>
         <div class="dialog-actions"><button id="cancel-dialog" class="button button-secondary" type="button">Cancel</button><button id="save-song" class="button button-primary" type="submit">Add to suggestions <span aria-hidden="true">↗</span></button></div>
+      </form>
+    </dialog>
+    <dialog id="pick-dialog" class="song-dialog" aria-labelledby="pick-dialog-title">
+      <form id="pick-form" class="song-form">
+        <div class="dialog-top"><span class="eyebrow">EMPTY THREATS / 4-SONG CHALLENGE</span><button id="close-pick-dialog" class="close-button" type="button" aria-label="Close">×</button></div>
+        <h2 id="pick-dialog-title">Add my pick</h2>
+        <p class="dialog-intro">You get four picks. Your own rating starts at 5.</p>
+        <div class="form-grid">
+          <div class="field"><label for="pick-title">Song <span>*</span></label><input id="pick-title" maxlength="120" required /></div>
+          <div class="field"><label for="pick-artist">Artist <span>*</span></label><input id="pick-artist" maxlength="120" required /></div>
+          <div class="field"><label for="pick-link">YouTube or Spotify link <span class="optional">optional</span></label><input id="pick-link" type="url" inputmode="url" maxlength="500" placeholder="https://youtu.be/… or https://open.spotify.com/…" /></div>
+        </div>
+        <p id="pick-form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button id="cancel-pick-dialog" class="button button-secondary" type="button">Cancel</button><button id="save-pick" class="button button-primary" type="submit">Add my pick</button></div>
       </form>
     </dialog>
   </body>
