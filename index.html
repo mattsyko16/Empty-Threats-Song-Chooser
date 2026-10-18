@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#171518" />
     <meta name="description" content="Empty Threats Band App — song ideas, the four-song challenge, and upcoming gigs." />
-    <title>Empty Threats Band App</title>
-    <link rel="stylesheet" href="styles.css?v=qr-1" />
+    <title>Empty Threats Band App · v1.1.0</title>
+    <link rel="stylesheet" href="styles.css?v=1.1.0" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
-    <script src="app.js?v=gigs-1" defer></script>
+    <script src="app.js?v=1.1.0" defer></script>
   </head>
   <body>
     <div id="app">
       <header class="site-header">
-        <a class="brand" href="./" aria-label="Empty Threats Band App home">
+        <a class="brand" href="./?v=1.1.0" aria-label="Empty Threats Band App home">
           <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
+          <span class="app-version">Band App v1.1.0</span>
         </a>
         <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
           <button type="button" data-view="board" class="app-nav-button active" aria-current="page">Song Board</button>
@@ -124,6 +125,7 @@
               <h1>See you at the <em>next gig.</em></h1>
               <p class="hero-subtitle">Upcoming Empty Threats shows, live from LiveBandPhotos.</p>
             </div>
+            <a class="button button-primary add-button" href="#gig-qr-heading">Show QR codes ↓</a>
           </div>
           <div class="gigs-toolbar">
             <p>The list below comes from LiveBandPhotos and updates when they change it.</p>
@@ -140,13 +142,13 @@
               <article class="gig-qr-card">
                 <h3>Facebook</h3>
                 <p>Follow Empty Threats</p>
-                <img src="assets/qr-facebook.svg" width="360" height="360" alt="QR code for the Empty Threats Facebook page" loading="lazy" />
+                <img src="assets/qr-facebook.svg?v=1.1.0" width="360" height="360" alt="QR code for the Empty Threats Facebook page" loading="lazy" />
                 <a class="button button-secondary" href="https://www.facebook.com/EmptyThreatsUK" target="_blank" rel="noopener noreferrer">Open Facebook ↗</a>
               </article>
               <article class="gig-qr-card">
                 <h3>Live gig list</h3>
                 <p>See our upcoming shows</p>
-                <img src="assets/qr-livebandphotos.svg" width="360" height="360" alt="QR code for the Empty Threats live gig list" loading="lazy" />
+                <img src="assets/qr-livebandphotos.svg?v=1.1.0" width="360" height="360" alt="QR code for the Empty Threats live gig list" loading="lazy" />
                 <a class="button button-secondary" href="https://www.livebandphotos.co.uk/band?Empty+Threats" target="_blank" rel="noopener noreferrer">Open gig list ↗</a>
               </article>
             </div>
