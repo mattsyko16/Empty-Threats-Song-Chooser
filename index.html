@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#171518" />
     <meta name="description" content="Empty Threats Band App — song ideas, the four-song challenge, and upcoming gigs." />
-    <title>Empty Threats Band App · v1.1.0</title>
-    <link rel="stylesheet" href="styles.css?v=1.1.0" />
+    <title>Empty Threats Band App · v1.2.0</title>
+    <link rel="stylesheet" href="styles.css?v=1.2.0" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
-    <script src="app.js?v=1.1.0" defer></script>
+    <script src="app.js?v=1.2.0" defer></script>
   </head>
   <body>
     <div id="app">
       <header class="site-header">
-        <a class="brand" href="./?v=1.1.0" aria-label="Empty Threats Band App home">
+        <a class="brand" href="./?v=1.2.0" aria-label="Empty Threats Band App home">
           <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
-          <span class="app-version">Band App v1.1.0</span>
+          <span class="app-version">Band App v1.2.0</span>
         </a>
         <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
           <button type="button" data-view="board" class="app-nav-button active" aria-current="page">Song Board</button>
@@ -105,16 +105,16 @@
             <div>
               <p class="eyebrow"><span class="eyebrow-line"></span> BAND HQ / NEXT SONGS</p>
               <h1>Pick four. <em>Rate them.</em></h1>
-              <p class="hero-subtitle">Each member picks up to four songs. Everyone else scores each pick 5, 3, or 1.</p>
+              <p class="hero-subtitle">Pick one song from each category. Everyone else scores each pick 5, 3, or 1.</p>
             </div>
             <button id="add-pick" class="button button-primary add-button" type="button"><span class="plus" aria-hidden="true">＋</span> Add my pick</button>
           </div>
           <div class="challenge-summary">
             <div><strong id="my-pick-count">0 of 4</strong><span> my picks</span></div>
-            <p>The picker starts with 5 points. Highest total leads. Any 1 is flagged, whatever the score.</p>
+            <p>One pick per category. The picker starts with 5 points; any 1 is flagged.</p>
           </div>
-          <p id="challenge-setup-message" class="setup-message" role="status" hidden>Challenge setup is needed in Supabase. Ask the band admin to run <code>add-challenge.sql</code>, then refresh.</p>
-          <div class="challenge-heading"><h2>Leaderboard</h2><button id="refresh-challenge" class="button button-secondary" type="button">Refresh</button></div>
+          <p id="challenge-setup-message" class="setup-message" role="status" hidden>Challenge setup is needed in Supabase. Ask the band admin to run <code>add-challenge.sql</code> and <code>add-categories.sql</code>, then refresh.</p>
+          <div class="challenge-heading"><h2>Leaderboard by category</h2><button id="refresh-challenge" class="button button-secondary" type="button">Refresh</button></div>
           <div id="challenge-list" class="challenge-list"></div>
           <p id="challenge-message" class="board-message" role="status" aria-live="polite"></p>
         </section>
@@ -180,8 +180,9 @@
       <form id="pick-form" class="song-form">
         <div class="dialog-top"><span class="eyebrow">EMPTY THREATS / 4-SONG CHALLENGE</span><button id="close-pick-dialog" class="close-button" type="button" aria-label="Close">×</button></div>
         <h2 id="pick-dialog-title">Add my pick</h2>
-        <p class="dialog-intro">You get four picks. Your own rating starts at 5.</p>
+        <p class="dialog-intro">Choose one song in each category. Your own rating starts at 5.</p>
         <div class="form-grid">
+          <div class="field"><label for="pick-category">Category <span>*</span></label><select id="pick-category" required><option value="">Choose a category</option><option value="rock-country">Rock &amp; Country</option><option value="indie-alternative">Indie &amp; Alternative</option><option value="pop-party">Pop &amp; Party</option><option value="funk-soul-disco">Funk, Soul &amp; Disco</option></select></div>
           <div class="field"><label for="pick-title">Song <span>*</span></label><input id="pick-title" maxlength="120" required /></div>
           <div class="field"><label for="pick-artist">Artist <span>*</span></label><input id="pick-artist" maxlength="120" required /></div>
           <div class="field"><label for="pick-link">YouTube or Spotify link <span class="optional">optional</span></label><input id="pick-link" type="url" inputmode="url" maxlength="500" placeholder="https://youtu.be/… or https://open.spotify.com/…" /></div>
