@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#171518" />
     <meta name="description" content="Empty Threats Band App — song ideas, the four-song challenge, and upcoming gigs." />
     <title>Empty Threats Band App</title>
-    <link rel="stylesheet" href="styles.css?v=gigs-1" />
+    <link rel="stylesheet" href="styles.css?v=qr-1" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
     <script src="app.js?v=gigs-1" defer></script>
@@ -133,6 +133,24 @@
               <a class="button button-secondary" href="webcal://www.livebandphotos.co.uk/ical?band=Empty+Threats">Subscribe to calendar</a>
             </div>
           </div>
+          <section class="gig-qr-section" aria-labelledby="gig-qr-heading">
+            <h2 id="gig-qr-heading">Scan &amp; share</h2>
+            <p>Scan with another phone, or tap a link to open it on this one.</p>
+            <div class="gig-qr-grid">
+              <article class="gig-qr-card">
+                <h3>Facebook</h3>
+                <p>Follow Empty Threats</p>
+                <img src="assets/qr-facebook.svg" width="360" height="360" alt="QR code for the Empty Threats Facebook page" loading="lazy" />
+                <a class="button button-secondary" href="https://www.facebook.com/EmptyThreatsUK" target="_blank" rel="noopener noreferrer">Open Facebook ↗</a>
+              </article>
+              <article class="gig-qr-card">
+                <h3>Live gig list</h3>
+                <p>See our upcoming shows</p>
+                <img src="assets/qr-livebandphotos.svg" width="360" height="360" alt="QR code for the Empty Threats live gig list" loading="lazy" />
+                <a class="button button-secondary" href="https://www.livebandphotos.co.uk/band?Empty+Threats" target="_blank" rel="noopener noreferrer">Open gig list ↗</a>
+              </article>
+            </div>
+          </section>
           <iframe id="gigs-frame" class="gigs-frame" title="Empty Threats upcoming gigs on LiveBandPhotos" loading="lazy" referrerpolicy="no-referrer"></iframe>
         </section>
       </main>

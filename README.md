@@ -4,6 +4,8 @@ A mobile-friendly band app with a shared song board, four-song challenge, and li
 
 The **Gigs** tab displays [Empty Threats' LiveBandPhotos list](https://www.livebandphotos.co.uk/band?Empty+Threats) directly. It updates when that site changes, with **Refresh list**, **Open full gig list**, and **Subscribe to calendar** controls. The gig data is maintained on LiveBandPhotos, not in Supabase. If a browser cannot display the embedded page, use **Open full gig list**.
 
+Two QR codes on the Gigs tab open the [band's Facebook page](https://www.facebook.com/EmptyThreatsUK) and the LiveBandPhotos gig list. They are stored as SVG files in `assets/`, so they load without an extra QR service. If either destination changes, regenerate its SVG as well as updating the link in `index.html`.
+
 Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
 
 The **4-Song Challenge** is a separate screen. Each joined browser can nominate up to four songs. The nominator automatically gives each pick 5 points; every other joined browser can rate it **5 (Love it), 3 (It's OK), or 1 (Hate it)**. Tap a rating again to clear it. The leaderboard ranks by total points, with earlier picks first on a tie. A song with any 1 is prominently flagged, even if it ranks highly. Members can remove their own picks, which also removes their ratings, and nominate replacements. Pick titles cannot be edited after voting; remove and re-add a pick to correct it.
@@ -21,6 +23,7 @@ Anyone who learns the code can join the board. Share it only with band members. 
 - `index.html` — the page and forms
 - `styles.css` — responsive design
 - `assets/empty-threats-logo.jpg` — band logo shown in the header
+- `assets/qr-facebook.svg` and `assets/qr-livebandphotos.svg` — scannable links on the Gigs tab
 - `app.js` — song board, band code entry, live updates
 - `config.js` — public Supabase project URL and publishable key
 - `supabase.sql` — tables, access rules, and live update setup
