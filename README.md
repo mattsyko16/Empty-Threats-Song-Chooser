@@ -8,7 +8,7 @@ Two QR codes on the Gigs tab open the [band's Facebook page](https://www.faceboo
 
 Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
 
-The **4-Song Challenge** is a separate screen. Each joined browser can nominate one song in each of **Rock & Country**, **Indie & Alternative**, **Pop & Party**, and **Funk, Soul & Disco**. The nominator automatically gives each pick 5 points; every other joined browser can rate it **5 (Love it), 3 (It's OK), or 1 (Hate it)**. Tap a rating again to clear it. Voting is grouped by category, with the highest-scoring songs first in each category and earlier picks first on a tie. A song with any 1 is prominently flagged, even if it ranks highly. Members can remove their own picks, which also removes their ratings, and nominate replacements. Older picks keep their ratings and appear under **Uncategorised picks** until their owners assign a category. Pick titles cannot be edited after voting; remove and re-add a pick to correct it.
+The **4-Song Challenge** is a separate screen. Each joined browser can nominate up to four songs, choosing **Rock & Country**, **Indie & Alternative**, **Pop & Party**, or **Funk, Soul & Disco** for each. Categories can repeat. The nominator automatically gives each pick 5 points; every other joined browser can rate it **5 (Love it), 3 (It's OK), or 1 (Hate it)**. Tap a rating again to clear it. The **Overall leaderboard** ranks all songs by points, while **By category** ranks the songs within each category. Earlier picks come first on a tie. A song with any 1 is prominently flagged, even if it ranks highly. Members can remove their own picks, which also removes their ratings, and nominate replacements. Older picks keep their ratings and appear as uncategorised until their owners or the designated classifier device assign a category. Once assigned, only the pick owner can change the category. Pick titles cannot be edited after voting; remove and re-add a pick to correct it.
 
 When adding or editing a song, paste an optional HTTPS YouTube or Spotify link. The song card then shows a button to open it. Links share the existing notes field in Supabase, so an existing board needs no database migration. Notes and link together can use up to 1,000 characters.
 
@@ -29,7 +29,9 @@ Anyone who learns the code can join the board. Share it only with band members. 
 - `supabase.sql` — tables, access rules, and live update setup
 - `add-likes.sql` — upgrade for an existing Supabase project
 - `add-challenge.sql` — upgrade for the four-song challenge on an existing Supabase project
-- `add-categories.sql` — upgrade for one pick per challenge category
+- `add-categories.sql` — upgrade for challenge categories
+- `allow-repeat-categories.sql` — removes the old one-pick-per-category rule from an existing project
+- `allow-legacy-classifier.sql` — optional one-device access to classify older picks from another member
 
 The page is plain HTML, CSS, and JavaScript. It needs no build step and works from the root of a GitHub Pages repository or a project subpath.
 
@@ -44,10 +46,14 @@ For a brand-new Supabase project, use `supabase.sql` instead; it already include
 ## Enable the 4-Song Challenge on the existing band board
 
 1. Open the existing Empty Threats project in [Supabase](https://supabase.com/dashboard).
-2. Open **SQL Editor → New query**. Paste the entire contents of `add-challenge.sql` and run it once. Then run `add-categories.sql` in a new query. The scripts can safely be run again if needed. They keep the current song board, access code, and existing challenge ratings.
-3. Refresh the website and open **4-Song Challenge** in the header. Each member can add one pick in each category and rate everyone else's picks. Owners of older picks can assign their categories directly on those cards.
+2. Open **SQL Editor → New query**. Paste the entire contents of `add-challenge.sql` and run it once. Then run `add-categories.sql` in a new query. They keep the current song board, access code, and existing challenge ratings.
+3. Refresh the website and open **4-Song Challenge** in the header. Each member can add up to four picks, in any mix of categories, and rate everyone else's picks. Owners of older picks can assign their categories directly on those cards.
 
 The limit and one-rating-per-browser rule are enforced in Supabase. Since access is anonymous per browser, a person using a second browser or a cleared browser profile gets a new membership after entering the band code and can nominate and rate again. First names are labels, not verified identities.
+
+To let one device classify another member's older, uncategorised picks, run `allow-legacy-classifier.sql`. On that device, open the 4-Song Challenge and tap **Copy this device ID**. In Supabase SQL Editor, insert that ID into `private.challenge_classifiers` using the final statement shown in the script. The device can assign categories only while those picks are uncategorised; other members retain their normal owner-only category controls. If browser data is cleared, the device gets a new ID and the allowlist must be updated.
+
+For an existing project that used the earlier one-pick-per-category version, run `allow-repeat-categories.sql` once. Do not rerun the older `add-categories.sql` over `allow-legacy-classifier.sql`, because it would restore the owner-only category trigger; use the dedicated repeat-categories script instead.
 
 ## Set up Supabase
 

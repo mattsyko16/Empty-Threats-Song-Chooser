@@ -22,10 +22,8 @@ begin
 end;
 $$;
 
--- A member cannot use the same category twice, including during simultaneous submissions.
-create unique index if not exists challenge_picks_one_per_category
-  on public.challenge_picks (owner_user_id, category)
-  where category is not null;
+-- Four picks total are allowed, including multiple picks in one category.
+drop index if exists public.challenge_picks_one_per_category;
 
 -- Keep the existing four-pick limit and require a category for every new pick.
 -- The original member row lock serialises concurrent submissions.

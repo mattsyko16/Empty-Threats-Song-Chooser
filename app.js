@@ -13,7 +13,7 @@ const DEMO_PICKS_KEY = "empty-threats-demo-challenge-picks-v1";
 const DEMO_RATINGS_KEY = "empty-threats-demo-challenge-ratings-v1";
 const GIGS_URL = "https://www.livebandphotos.co.uk/band?Empty+Threats#main";
 const LINK_LABEL = "Song link: ";
-const state = { client: null, session: null, demo: false, memberName: "", songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, challengeChannel: null, challengePicks: [], challengeRatings: [], challengeReady: true, sessionVersion: 0 };
+const state = { client: null, session: null, demo: false, memberName: "", songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, challengeChannel: null, challengePicks: [], challengeRatings: [], challengeReady: true, canClassifyLegacy: false, challengeView: "overall", sessionVersion: 0 };
 const $ = (selector) => document.querySelector(selector);
 
 const sampleSongs = [
@@ -324,10 +324,9 @@ function challengeScore(pick) {
 }
 
 function myChallengePicks() { return state.challengePicks.filter((pick) => pick.owner_user_id === memberId()); }
-function categoryOptions(current, pickId = null) {
-  const used = new Set(myChallengePicks().filter((pick) => pick.id !== pickId).map((pick) => pick.category));
+function categoryOptions(current) {
   return `<option value=""${current ? "" : " selected"} disabled>Choose a category</option>` + CHALLENGE_CATEGORIES.map(([slug, label]) =>
-    `<option value="${slug}"${current === slug ? " selected" : ""}${used.has(slug) ? " disabled" : ""}>${escapeHtml(label)}</option>`).join("");
+    `<option value="${slug}"${current === slug ? " selected" : ""}>${escapeHtml(label)}</option>`).join("");
 }
 
 function challengeCardHtml(pick, rank) {
@@ -335,16 +334,17 @@ function challengeCardHtml(pick, rank) {
   const mine = pick.owner_user_id === memberId();
   const myRating = state.challengeRatings.find((rating) => rating.pick_id === pick.id && rating.voter_user_id === memberId())?.score;
   const service = pick.link_url ? songLinkService(pick.link_url) : null;
+  const categoryControl = mine || (!pick.category && state.canClassifyLegacy)
+    ? `<label class="challenge-category-control">${pick.category ? "Category" : "Assign category"}<select data-action="category" aria-label="Category for ${escapeHtml(pick.title)}">${categoryOptions(pick.category)}</select></label>` : "";
   const buttons = mine
-    ? `<div class="challenge-own"><span>Your pick · automatic 5</span><button class="challenge-remove" type="button" data-action="remove-pick" aria-label="Remove ${escapeHtml(pick.title)} from your picks">Remove pick</button></div>
-       <label class="challenge-category-control">Category <select data-action="category" aria-label="Category for ${escapeHtml(pick.title)}">${categoryOptions(pick.category, pick.id)}</select></label>`
+    ? `<div class="challenge-own"><span>Your pick · automatic 5</span><button class="challenge-remove" type="button" data-action="remove-pick" aria-label="Remove ${escapeHtml(pick.title)} from your picks">Remove pick</button></div>`
     : `<div class="challenge-rate"><span>Your rating</span><div class="rating-buttons" role="group" aria-label="Rate ${escapeHtml(pick.title)}">${[[5, "Love it"], [3, "It’s OK"], [1, "Hate it"]].map(([value, label]) => `<button type="button" data-action="rate" data-score="${value}" class="rating-button${myRating === value ? " selected" : ""}" aria-pressed="${myRating === value}" aria-label="${value} points: ${label} for ${escapeHtml(pick.title)}">${value} <small>${label}</small></button>`).join("")}</div></div>`;
   return `<article class="challenge-card${score.ones ? " has-one" : ""}" data-id="${escapeHtml(pick.id)}">
-    <div class="challenge-card-top"><span class="challenge-rank">#${rank}</span><div class="challenge-song"><h3>${escapeHtml(pick.title)}</h3><p>${escapeHtml(pick.artist)} · Picked by ${escapeHtml(pick.picked_by)}</p></div><div class="challenge-points"><strong>${score.total}</strong><span>points</span></div></div>
+    <div class="challenge-card-top"><span class="challenge-rank">#${rank}</span><div class="challenge-song"><h3>${escapeHtml(pick.title)}</h3><p>${escapeHtml(pick.artist)} · Picked by ${escapeHtml(pick.picked_by)} · ${escapeHtml(CHALLENGE_CATEGORIES.find(([slug]) => slug === pick.category)?.[1] || "Uncategorised")}</p></div><div class="challenge-points"><strong>${score.total}</strong><span>points</span></div></div>
     ${score.ones ? `<p class="challenge-warning">⚠ Received ${score.ones} ${score.ones === 1 ? "rating" : "ratings"} of 1 — discuss before learning</p>` : ""}
     <div class="challenge-breakdown"><span>♥ ${score.fives} love</span><span>● ${score.threes} OK</span><span>▼ ${score.ones} hate</span></div>
     ${service ? `<a class="song-link" href="${escapeHtml(pick.link_url)}" target="_blank" rel="noopener noreferrer">${service === "YouTube" ? "Watch on YouTube" : "Listen on Spotify"} ↗</a>` : ""}
-    ${buttons}
+    ${buttons}${categoryControl}
   </article>`;
 }
 
@@ -352,25 +352,39 @@ function renderChallenge() {
   const myCount = myChallengePicks().length;
   $("#my-pick-count").textContent = `${myCount} of 4`;
   $("#add-pick").disabled = !state.challengeReady || myCount >= 4;
-  $("#add-pick").title = myCount >= 4 ? "Assign a category to each existing pick, or remove one to add another" : "";
+  $("#add-pick").title = myCount >= 4 ? "Remove one of your picks before adding another" : "";
   $("#challenge-setup-message").hidden = state.challengeReady;
+  document.querySelectorAll(".challenge-view-button").forEach((button) => {
+    const active = button.dataset.challengeView === state.challengeView;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  $("#challenge-list-title").textContent = state.challengeView === "overall" ? "Overall leaderboard" : "Leaderboard by category";
   const ranked = [...state.challengePicks].sort((a, b) => challengeScore(b).total - challengeScore(a).total
     || new Date(a.created_at) - new Date(b.created_at) || a.id.localeCompare(b.id));
+  if (state.challengeView === "overall") {
+    $("#challenge-list").innerHTML = ranked.length
+      ? `<div class="challenge-overall-list">${ranked.map((pick, index) => challengeCardHtml(pick, index + 1)).join("")}</div>`
+      : `<p class="challenge-category-empty">No picks yet. Add one to start the challenge.</p>`;
+    return;
+  }
   const groups = CHALLENGE_CATEGORIES.map(([slug, label]) => {
     const picks = ranked.filter((pick) => pick.category === slug);
     return `<section class="challenge-category" aria-label="${escapeHtml(label)}"><div class="challenge-category-heading"><h3>${escapeHtml(label)}</h3><span>${picks.length} ${picks.length === 1 ? "song" : "songs"}</span></div><div class="challenge-category-list">${picks.length ? picks.map((pick, index) => challengeCardHtml(pick, index + 1)).join("") : `<p class="challenge-category-empty">No picks yet</p>`}</div></section>`;
   });
   const legacy = ranked.filter((pick) => !CHALLENGE_CATEGORIES.some(([slug]) => slug === pick.category));
-  if (legacy.length) groups.push(`<section class="challenge-category challenge-category-legacy" aria-label="Uncategorised picks"><div class="challenge-category-heading"><h3>Uncategorised picks</h3><span>${legacy.length} ${legacy.length === 1 ? "song" : "songs"}</span></div><p class="challenge-category-empty">These were added before categories. Each picker can assign their own songs below; ratings stay in place.</p><div class="challenge-category-list">${legacy.map((pick, index) => challengeCardHtml(pick, index + 1)).join("")}</div></section>`);
+  if (legacy.length) groups.push(`<section class="challenge-category challenge-category-legacy" aria-label="Uncategorised picks"><div class="challenge-category-heading"><h3>Uncategorised picks</h3><span>${legacy.length} ${legacy.length === 1 ? "song" : "songs"}</span></div><p class="challenge-category-empty">${state.canClassifyLegacy ? "Choose a category for each older pick below. Ratings stay in place." : "These older picks need a category. The pick owner or designated classifier can assign one."}</p><div class="challenge-category-list">${legacy.map((pick, index) => challengeCardHtml(pick, index + 1)).join("")}</div></section>`);
   $("#challenge-list").innerHTML = groups.join("");
 }
 
 async function loadChallenge() {
   if (state.demo) { renderChallenge(); return; }
-  const [picksResult, ratingsResult] = await Promise.all([
+  const [picksResult, ratingsResult, classifierResult] = await Promise.all([
     state.client.from("challenge_picks").select("id,owner_user_id,picked_by,title,artist,link_url,category,created_at"),
-    state.client.from("challenge_ratings").select("pick_id,voter_user_id,score")
+    state.client.from("challenge_ratings").select("pick_id,voter_user_id,score"),
+    state.client.rpc("can_classify_legacy")
   ]);
+  state.canClassifyLegacy = !classifierResult.error && classifierResult.data === true;
   state.challengeReady = !picksResult.error && !ratingsResult.error;
   if (!state.challengeReady) {
     state.challengePicks = [];
@@ -411,7 +425,7 @@ async function savePick(event) {
   if (link && !songLinkService(link)) { $("#pick-form-error").textContent = "Please use a full HTTPS YouTube or Spotify link."; return; }
   const payload = { owner_user_id: memberId(), picked_by: state.memberName, title: $("#pick-title").value.trim(), artist: $("#pick-artist").value.trim(), link_url: link || null, category: $("#pick-category").value };
   if (!payload.title || !payload.artist || !payload.picked_by) { $("#pick-form-error").textContent = "Please enter a song and artist."; return; }
-  if (!CHALLENGE_CATEGORIES.some(([slug]) => slug === payload.category) || myChallengePicks().some((pick) => pick.category === payload.category)) { $("#pick-form-error").textContent = "Choose a category you have not used yet."; return; }
+  if (!CHALLENGE_CATEGORIES.some(([slug]) => slug === payload.category)) { $("#pick-form-error").textContent = "Choose a category."; return; }
   const button = $("#save-pick");
   button.disabled = true;
   try {
@@ -424,14 +438,20 @@ async function savePick(event) {
 }
 
 async function changePickCategory(pick, category, select) {
-  if (pick.owner_user_id !== memberId() || !CHALLENGE_CATEGORIES.some(([slug]) => slug === category) || myChallengePicks().some((item) => item.id !== pick.id && item.category === category)) {
+  if ((pick.owner_user_id !== memberId() && (pick.category || !state.canClassifyLegacy)) || !CHALLENGE_CATEGORIES.some(([slug]) => slug === category)) {
     select.value = pick.category || "";
     return;
   }
   select.disabled = true;
   try {
     if (state.demo) { pick.category = category; saveDemoChallenge(); }
-    else { const { error } = await state.client.from("challenge_picks").update({ category }).eq("id", pick.id).eq("owner_user_id", memberId()); if (error) throw error; }
+    else {
+      let query = state.client.from("challenge_picks").update({ category }).eq("id", pick.id);
+      query = pick.owner_user_id === memberId() ? query.eq("owner_user_id", memberId()) : query.is("category", null);
+      const { data, error } = await query.select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("This pick was already classified. Refresh to see its category.");
+    }
     await loadChallenge();
   } catch (error) { challengeMessage(`Couldn’t save category: ${error.message}`); select.disabled = false; select.value = pick.category || ""; }
 }
@@ -504,6 +524,10 @@ async function init() {
   $("#cancel-pick-dialog").addEventListener("click", () => $("#pick-dialog").close());
   $("#pick-form").addEventListener("submit", savePick);
   $("#refresh-challenge").addEventListener("click", () => { void loadChallenge(); });
+  document.querySelectorAll(".challenge-view-button").forEach((button) => button.addEventListener("click", () => {
+    state.challengeView = button.dataset.challengeView;
+    renderChallenge();
+  }));
   $("#copy-device-id").addEventListener("click", async () => {
     const id = memberId();
     if (!id || state.demo) return;
