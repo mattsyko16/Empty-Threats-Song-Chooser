@@ -5,6 +5,7 @@ const DEMO_KEY = "empty-threats-demo-songs-v1";
 const DEMO_LIKES_KEY = "empty-threats-demo-likes-v1";
 const DEMO_PICKS_KEY = "empty-threats-demo-challenge-picks-v1";
 const DEMO_RATINGS_KEY = "empty-threats-demo-challenge-ratings-v1";
+const GIGS_URL = "https://www.livebandphotos.co.uk/band?Empty+Threats#main";
 const LINK_LABEL = "Song link: ";
 const state = { client: null, session: null, demo: false, memberName: "", songs: [], likes: [], likesReady: true, suggestionOrder: "added", activeStage: "suggestions", search: "", editingId: null, channel: null, challengeChannel: null, challengePicks: [], challengeRatings: [], challengeReady: true, sessionVersion: 0 };
 const $ = (selector) => document.querySelector(selector);
@@ -53,6 +54,7 @@ function showView(view) {
   $("#auth-view").hidden = view !== "auth";
   $("#board-view").hidden = view !== "board";
   $("#challenge-view").hidden = view !== "challenge";
+  $("#gigs-view").hidden = view !== "gigs";
   $("#app-nav").hidden = view === "auth";
   document.querySelectorAll(".app-nav-button").forEach((button) => {
     const active = button.dataset.view === view;
@@ -158,6 +160,7 @@ function subscribeToSongs() {
 async function handleSession(session) {
   const version = ++state.sessionVersion;
   const wasChallenge = !$("#challenge-view").hidden;
+  const wasGigs = !$("#gigs-view").hidden;
   state.session = session;
   removeChannel();
   if (!session) { state.memberName = ""; showView("auth"); authMessage(); return; }
@@ -176,6 +179,7 @@ async function handleSession(session) {
   if (version === state.sessionVersion) {
     subscribeToSongs();
     if (wasChallenge) await openChallenge();
+    if (wasGigs) showView("gigs");
   }
 }
 
@@ -375,6 +379,11 @@ async function openChallenge() {
   subscribeToChallenge();
 }
 
+function openGigs() {
+  $("#gigs-frame").src = GIGS_URL;
+  showView("gigs");
+}
+
 async function savePick(event) {
   event.preventDefault();
   const form = $("#pick-form");
@@ -446,8 +455,10 @@ function startDemo() {
 async function init() {
   document.querySelectorAll(".app-nav-button").forEach((button) => button.addEventListener("click", () => {
     if (button.dataset.view === "challenge") void openChallenge();
+    else if (button.dataset.view === "gigs") openGigs();
     else showView("board");
   }));
+  $("#refresh-gigs").addEventListener("click", () => { $("#gigs-frame").src = GIGS_URL; });
   $("#add-pick").addEventListener("click", () => {
     $("#pick-form").reset();
     $("#pick-form-error").textContent = "";

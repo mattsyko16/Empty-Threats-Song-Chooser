@@ -1,6 +1,8 @@
 # Empty Threats Band App
 
-A mobile-friendly band app with a shared song board and four-song challenge. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
+A mobile-friendly band app with a shared song board, four-song challenge, and live gig list. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
+
+The **Gigs** tab displays [Empty Threats' LiveBandPhotos list](https://www.livebandphotos.co.uk/band?Empty+Threats) directly. It updates when that site changes, with **Refresh list**, **Open full gig list**, and **Subscribe to calendar** controls. The gig data is maintained on LiveBandPhotos, not in Supabase. If a browser cannot display the embedded page, use **Open full gig list**.
 
 Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
 

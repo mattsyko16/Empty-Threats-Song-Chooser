@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#171518" />
-    <meta name="description" content="Empty Threats Band App — song ideas and the four-song challenge." />
+    <meta name="description" content="Empty Threats Band App — song ideas, the four-song challenge, and upcoming gigs." />
     <title>Empty Threats Band App</title>
-    <link rel="stylesheet" href="styles.css?v=challenge-1" />
+    <link rel="stylesheet" href="styles.css?v=gigs-1" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
-    <script src="app.js?v=challenge-1" defer></script>
+    <script src="app.js?v=gigs-1" defer></script>
   </head>
   <body>
     <div id="app">
@@ -20,6 +20,7 @@
         <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
           <button type="button" data-view="board" class="app-nav-button active" aria-current="page">Song Board</button>
           <button type="button" data-view="challenge" class="app-nav-button">4-Song Challenge</button>
+          <button type="button" data-view="gigs" class="app-nav-button">Gigs</button>
         </nav>
       </header>
 
@@ -115,6 +116,24 @@
           <div class="challenge-heading"><h2>Leaderboard</h2><button id="refresh-challenge" class="button button-secondary" type="button">Refresh</button></div>
           <div id="challenge-list" class="challenge-list"></div>
           <p id="challenge-message" class="board-message" role="status" aria-live="polite"></p>
+        </section>
+        <section id="gigs-view" class="board-view gigs-view" hidden>
+          <div class="hero">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-line"></span> BAND HQ / LIVE DATES</p>
+              <h1>See you at the <em>next gig.</em></h1>
+              <p class="hero-subtitle">Upcoming Empty Threats shows, live from LiveBandPhotos.</p>
+            </div>
+          </div>
+          <div class="gigs-toolbar">
+            <p>The list below comes from LiveBandPhotos and updates when they change it.</p>
+            <div class="gigs-links">
+              <button id="refresh-gigs" class="button button-secondary" type="button">Refresh list</button>
+              <a class="button button-secondary" href="https://www.livebandphotos.co.uk/band?Empty+Threats" target="_blank" rel="noopener noreferrer">Open full gig list ↗</a>
+              <a class="button button-secondary" href="webcal://www.livebandphotos.co.uk/ical?band=Empty+Threats">Subscribe to calendar</a>
+            </div>
+          </div>
+          <iframe id="gigs-frame" class="gigs-frame" title="Empty Threats upcoming gigs on LiveBandPhotos" loading="lazy" referrerpolicy="no-referrer"></iframe>
         </section>
       </main>
 
