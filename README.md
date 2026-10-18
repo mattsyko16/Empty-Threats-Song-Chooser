@@ -1,6 +1,6 @@
-# Empty Threats Song Board
+# Empty Threats Band App
 
-A mobile-friendly, shared song board for the band. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
+A mobile-friendly band app with a shared song board and four-song challenge. Songs move from **Suggestions** to **To Be Practiced** to **Gig Ready**. Members can add, edit, move, search, and delete songs without email addresses or passwords.
 
 Members can like Suggestions and tap again to remove their like. **Added order** is the default view: the first song added stays at the top, and vote totals are hidden. **Vote order** shows the most liked songs first, with earlier additions first when counts tie. Because sign-in is anonymous per browser, each joined browser gets one like per song; the same person using another browser can like it again.
 

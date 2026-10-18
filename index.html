@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#171518" />
-    <meta name="description" content="Empty Threats song board — from first suggestion to gig ready." />
-    <title>Song Board · Empty Threats</title>
+    <meta name="description" content="Empty Threats Band App — song ideas and the four-song challenge." />
+    <title>Empty Threats Band App</title>
     <link rel="stylesheet" href="styles.css?v=challenge-1" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
@@ -14,7 +14,7 @@
   <body>
     <div id="app">
       <header class="site-header">
-        <a class="brand" href="./" aria-label="Empty Threats song board home">
+        <a class="brand" href="./" aria-label="Empty Threats Band App home">
           <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
         </a>
         <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
@@ -34,13 +34,13 @@
           <div class="auth-panel">
             <div class="panel-icon" aria-hidden="true">✳</div>
             <h2>Band members, come on in.</h2>
-            <p>Enter the shared band code to open the song board.</p>
+            <p>Enter the shared band code to open the band app.</p>
             <form id="join-form">
               <label for="band-name">Your first name</label>
               <input id="band-name" name="band_name" type="text" autocomplete="given-name" maxlength="80" placeholder="e.g. Matt" required />
               <label for="band-code">Band access code</label>
               <input id="band-code" name="band_code" type="password" autocomplete="off" minlength="16" placeholder="Enter the band code" required />
-              <button class="button button-primary full-width" type="submit">Open song board <span aria-hidden="true">↗</span></button>
+              <button class="button button-primary full-width" type="submit">Open band app <span aria-hidden="true">↗</span></button>
             </form>
             <p id="auth-message" class="form-message" role="status" aria-live="polite"></p>
             <p class="fine-print">Ask the band admin for the code. Access stays on this browser, so you only need to enter it once.</p>
@@ -118,7 +118,7 @@
         </section>
       </main>
 
-      <footer class="site-footer"><span>EMPTY THREATS <span class="footer-star">✳</span> SONG BOARD</span><span>TURN IT UP. PLAY IT LOUD.</span></footer>
+      <footer class="site-footer"><span>EMPTY THREATS <span class="footer-star">✳</span> BAND APP</span><span>TURN IT UP. PLAY IT LOUD.</span></footer>
     </div>
 
     <dialog id="song-dialog" class="song-dialog" aria-labelledby="dialog-title">
