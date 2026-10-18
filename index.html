@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#171518" />
     <meta name="description" content="Empty Threats Band App — song ideas, the four-song challenge, and upcoming gigs." />
-    <title>Empty Threats Band App · v1.2.0</title>
-    <link rel="stylesheet" href="styles.css?v=1.2.0" />
+    <title>Empty Threats Band App · v1.2.1</title>
+    <link rel="stylesheet" href="styles.css?v=1.2.1" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
-    <script src="app.js?v=1.2.0" defer></script>
+    <script src="app.js?v=1.2.1" defer></script>
   </head>
   <body>
     <div id="app">
       <header class="site-header">
-        <a class="brand" href="./?v=1.2.0" aria-label="Empty Threats Band App home">
+        <a class="brand" href="./?v=1.2.1" aria-label="Empty Threats Band App home">
           <img class="brand-logo" src="assets/empty-threats-logo.jpg" width="2743" height="576" alt="Empty Threats" />
-          <span class="app-version">Band App v1.2.0</span>
+          <span class="app-version">Band App v1.2.1</span>
         </a>
         <nav id="app-nav" class="app-nav" aria-label="Band screens" hidden>
           <button type="button" data-view="board" class="app-nav-button active" aria-current="page">Song Board</button>
@@ -113,6 +113,7 @@
             <div><strong id="my-pick-count">0 of 4</strong><span> my picks</span></div>
             <p>One pick per category. The picker starts with 5 points; any 1 is flagged.</p>
           </div>
+          <div class="challenge-device-id"><button id="copy-device-id" class="text-button" type="button">Copy this device ID</button><code id="device-id-output" hidden></code><span id="device-id-status" role="status" aria-live="polite"></span></div>
           <p id="challenge-setup-message" class="setup-message" role="status" hidden>Challenge setup is needed in Supabase. Ask the band admin to run <code>add-challenge.sql</code> and <code>add-categories.sql</code>, then refresh.</p>
           <div class="challenge-heading"><h2>Leaderboard by category</h2><button id="refresh-challenge" class="button button-secondary" type="button">Refresh</button></div>
           <div id="challenge-list" class="challenge-list"></div>

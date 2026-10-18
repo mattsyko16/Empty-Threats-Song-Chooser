@@ -480,6 +480,7 @@ function startDemo() {
   catch { state.challengeRatings = []; }
   $("#demo-banner").hidden = false;
   $("#challenge-demo-banner").hidden = false;
+  $("#copy-device-id").hidden = true;
   $("#refresh").hidden = true;
   showView("board");
   renderBoard();
@@ -503,6 +504,19 @@ async function init() {
   $("#cancel-pick-dialog").addEventListener("click", () => $("#pick-dialog").close());
   $("#pick-form").addEventListener("submit", savePick);
   $("#refresh-challenge").addEventListener("click", () => { void loadChallenge(); });
+  $("#copy-device-id").addEventListener("click", async () => {
+    const id = memberId();
+    if (!id || state.demo) return;
+    const output = $("#device-id-output");
+    output.textContent = id;
+    output.hidden = false;
+    try {
+      await navigator.clipboard.writeText(id);
+      $("#device-id-status").textContent = "Copied. Paste it into the chat.";
+    } catch {
+      $("#device-id-status").textContent = "Copy the ID shown here and paste it into the chat.";
+    }
+  });
   $("#challenge-list").addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
     if (!button) return;
